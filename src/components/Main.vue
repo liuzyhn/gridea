@@ -23,7 +23,7 @@
             <span class="nav-text">{{ $t('tag') }}</span>
           </a-menu-item>
           <a-menu-item key="theme">
-            <i class="zwicon-image-wide menu-icon"></i>
+            <i class="zwicon-palette menu-icon"></i>
             <span class="nav-text">{{ $t('theme') }}</span>
           </a-menu-item>
           <a-menu-item key="setting">
@@ -43,7 +43,7 @@
           <span>v {{ version }}</span>
           <i class="zwicon-web web-btn" @click="goWeb" v-if="site.setting.domain"></i>
           <a-tooltip :title="`🌟 ${$t('starSupport')}`">
-            <a-icon type="github" style="font-size: 14px; cursor: pointer;" @click="openInBrowser('https://github.com/getgridea/gridea')" />
+            <a-icon type="github" style="font-size: 14px; cursor: pointer;" @click="handleGithubClick" />
           </a-tooltip>
         </div>
       </div>
@@ -71,7 +71,7 @@
 </template>
 
 <script lang="ts">
-import { ipcRenderer, Event, shell } from 'electron'
+import { ipcRenderer, IpcRendererEvent, shell } from 'electron'
 import { Vue, Component } from 'vue-property-decorator'
 import axios from 'axios'
 import { State, Action } from 'vuex-class'
@@ -79,6 +79,7 @@ import ISnackbar from '../interfaces/snackbar'
 import { Site } from '../store/modules/site'
 import * as pkg from '../../package.json'
 import markdown from '../server/plugins/markdown'
+import ga from '../helpers/analytics'
 
 @Component
 export default class App extends Vue {
@@ -119,7 +120,7 @@ export default class App extends Vue {
     const siteFolder = localStorage.getItem('sourceFolder') || ''
 
     ipcRenderer.send('app-site-reload', { siteFolder })
-    ipcRenderer.once('app-site-loaded', (event: Event, result: Site) => {
+    ipcRenderer.once('app-site-loaded', (event: IpcRendererEvent, result: Site) => {
       console.log(result)
       this.updateSite(result)
     })
@@ -127,12 +128,18 @@ export default class App extends Vue {
 
   public preview() {
     ipcRenderer.send('html-render')
-    ipcRenderer.once('html-rendered', (event: Event, result: any) => {
+
+    ga.event('Preview', 'Preview - start', { evLabel: this.site.setting.domain })
+
+    ipcRenderer.once('html-rendered', (event: IpcRendererEvent, result: any) => {
       this.$message.success(`🎉  ${this.$t('renderSuccess')}`)
+
+      ga.event('Preview', 'Preview - success', { evLabel: this.site.setting.domain })
+
       ipcRenderer.send('app-preview-server-port-get')
       ipcRenderer.once(
         'app-preview-server-port-got',
-        (portGotEvent: Event, port: any) => {
+        (portGotEvent: IpcRendererEvent, port: any) => {
           this.openInBrowser(`http://localhost:${port}`)
         },
       )
@@ -148,12 +155,19 @@ export default class App extends Vue {
 
     ipcRenderer.send('site-publish')
     this.publishLoading = true
-    ipcRenderer.once('site-published', (event: Event, result: any) => {
+
+    ga.event('Publish', 'Publish - start', { evLabel: this.site.setting.domain })
+
+    ipcRenderer.once('site-published', (event: IpcRendererEvent, result: any) => {
       console.log(result)
       if (result.success) {
         this.$message.success(`🎉  ${this.$t('syncSuccess')}`)
+
+        ga.event('Publish', 'Publish - success', { evLabel: this.site.setting.domain })
       } else {
         this.syncErrorModalVisible = true
+
+        ga.event('Publish', 'Publish - failed', { evLabel: this.site.setting.domain })
       }
       this.publishLoading = false
     })
@@ -165,8 +179,16 @@ export default class App extends Vue {
 
   goWeb() {
     if (this.site.setting.domain) {
+      ga.event('Client', 'Client - open-web', { evLabel: this.site.setting.domain })
+
       shell.openExternal(this.site.setting.domain)
     }
+  }
+
+  handleGithubClick() {
+    ga.event('Client', 'Client - open-github', {})
+
+    this.openInBrowser('https://github.com/getgridea/gridea')
   }
 
   public async checkUpdate() {

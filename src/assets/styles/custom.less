@@ -43,6 +43,36 @@
     margin-left: 16px;
     -webkit-app-region: no-drag;
   }
+  .op-btn {
+    height: 30px;
+    line-height: 30px;
+    padding: 0 16px;
+    font-size: 18px;
+    border-radius: 20px;
+    margin-left: 8px;
+    outline: none;
+    transition: all 0.3s;
+    i {
+      font-weight: bold;
+    }
+    &:hover {
+      background: #efefef;
+      color: #515457;
+    }
+    &:focus {
+      background: #efefef;
+    }
+    &.save-btn {
+      color: #38A169;
+      &:hover {
+        background: #9AE6B4;
+        color: #22543D;
+      }
+      &:focus {
+        background: #68D391;
+      }
+    }
+  }
 }
 .content-container {
   margin-top: 48px;
@@ -73,13 +103,16 @@
   margin: 8px 0;
 }
 
-.ant-pagination-item-active {
-  background: #f9f7f3;
+.ant-pagination-item a {
+  color: #718096;
 }
-.ant-pagination-item {
-  background: #f9f7f3;
-  border-radius: 50%;
+
+.ant-pagination-item-active, .ant-pagination-item-active:focus, .ant-pagination-item-active:hover {
+  border-color: transparent;
+  color: #1A202C;
+  font-weight: bold;
 }
+
 .ant-menu-inline > .ant-menu-item {
   height: 36px;
   line-height: 36px;
@@ -128,6 +161,16 @@
 
 .ant-message {
   z-index: 3010;
+  top: 8px;
+  font-size: 12px;
+}
+
+.ant-message-notice-content {
+  padding: 8px 16px;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px 0 rgba(0,0,0,.1),0 1px 2px 0 rgba(0,0,0,.06)!important;
+  background: #000;
+  color: #fafafa;
 }
 
 .ant-drawer-close-x {
@@ -204,6 +247,7 @@
 .ant-modal-content {
   border-radius: 10px;
   overflow: hidden;
+  box-shadow: 0px 20px 100px 0px rgba(0,0,0,0.15);
 }
 
 .ant-modal-header {
@@ -212,4 +256,36 @@
 
 .ant-form-explain, .ant-form-extra {
   font-size: 12px;
+}
+
+.ant-tooltip {
+  font-size: 12px;
+}
+
+.ant-tooltip-arrow,
+.ant-popover-arrow {
+  display: none;
+}
+
+.ant-tooltip-inner {
+  padding: 4px 8px;
+  min-height: auto;
+}
+
+.ant-drawer-mask, .ant-modal-mask {
+  backdrop-filter: saturate(180%) blur(20px);
+  background-color: rgba(242,242,242,0.5);
+}
+
+.ant-drawer.ant-drawer-open .ant-drawer-mask {
+  opacity: 1;
+}
+
+.ant-drawer-right.ant-drawer-open .ant-drawer-content-wrapper {
+  box-shadow: 0px 20px 100px 0px rgba(0,0,0,0.15);
+}
+
+.ant-popover-inner {
+  border: 1px solid #eee;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06)!important;
 }

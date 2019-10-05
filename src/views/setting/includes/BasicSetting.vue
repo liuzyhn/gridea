@@ -40,9 +40,10 @@
 </template>
 
 <script lang="ts">
-import { ipcRenderer, Event } from 'electron'
+import { ipcRenderer, IpcRendererEvent } from 'electron'
 import { Vue, Component, Watch } from 'vue-property-decorator'
 import { State } from 'vuex-class'
+import ga from '../../../helpers/analytics'
 
 @Component
 export default class BasicSetting extends Vue {
@@ -104,9 +105,11 @@ export default class BasicSetting extends Vue {
     if (!formValid) { return false }
 
     ipcRenderer.send('setting-save', this.form)
-    ipcRenderer.once('setting-saved', (event: Event, result: any) => {
+    ipcRenderer.once('setting-saved', (event: IpcRendererEvent, result: any) => {
       this.$bus.$emit('site-reload')
       this.$message.success(this.$t('basicSettingSuccess'))
+
+      ga.event('Setting', 'Setting - save', { evLabel: this.form.platform })
     })
   }
 
@@ -117,13 +120,19 @@ export default class BasicSetting extends Vue {
       ipcRenderer.once('app-site-loaded', () => {
         this.detectLoading = true
         ipcRenderer.send('remote-detect')
-        ipcRenderer.once('remote-detected', (event: Event, result: any) => {
+
+        ga.event('Setting', 'Setting - detect', { evLabel: this.form.platform })
+        ipcRenderer.once('remote-detected', (event: IpcRendererEvent, result: any) => {
           console.log('检测结果', result)
           this.detectLoading = false
           if (result.success) {
             this.$message.success(this.$t('connectSuccess'))
+
+            ga.event('Setting', 'Setting - detect-success', { evLabel: this.form.platform })
           } else {
             this.$message.error(this.$t('connectFailed'))
+
+            ga.event('Setting', 'Setting - detect-failed', { evLabel: this.form.platform })
           }
         })
       })

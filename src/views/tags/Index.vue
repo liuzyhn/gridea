@@ -1,7 +1,11 @@
 <template>
   <div class="">
     <a-row type="flex" justify="end" class="tool-container">
-      <a-button class="btn" type="primary" @click="newTag">{{ $t('newTag') }}</a-button>
+      <a-tooltip placement="bottom" :title="$t('newTag')">
+        <div class="op-btn" tabindex="0" @click="newTag">
+          <i class="zwicon-plus"></i>
+        </div>
+      </a-tooltip>
     </a-row>
     <div class="content-container">
       <div v-for="(tag, index) in site.tags" :key="tag.name" class="tag-wrapper">
@@ -48,7 +52,7 @@
 </template>
 
 <script lang="ts">
-import { ipcRenderer, Event } from 'electron'
+import { ipcRenderer, IpcRendererEvent } from 'electron'
 import { Vue, Component } from 'vue-property-decorator'
 import { State } from 'vuex-class'
 import shortid from 'shortid'
@@ -56,6 +60,7 @@ import slug from '../../helpers/slug'
 import { Site } from '../../store/modules/site'
 import { UrlFormats } from '../../helpers/enums'
 import { ITag } from '../../interfaces/tag'
+import ga from '../../helpers/analytics'
 
 @Component
 export default class Tags extends Vue {
@@ -100,6 +105,8 @@ export default class Tags extends Vue {
     if (this.site.themeConfig.tagUrlFormat === UrlFormats.ShortId) {
       this.form.slug = shortid.generate()
     }
+
+    ga.event('Tags', 'Tags - new', { evLabel: this.site.setting.domain })
   }
 
   buildSlug() {
@@ -154,10 +161,12 @@ export default class Tags extends Vue {
     }
 
     ipcRenderer.send('tag-save', { ...this.form, used: false })
-    ipcRenderer.once('tag-saved', (event: Event, result: any) => {
+    ipcRenderer.once('tag-saved', (event: IpcRendererEvent, result: any) => {
       this.$bus.$emit('site-reload')
       this.$message.success('标签已保存')
       this.visible = false
+
+      ga.event('Tags', 'Tags - save', { evLabel: this.form.name })
     })
   }
 
@@ -170,7 +179,7 @@ export default class Tags extends Vue {
       cancelText: 'No',
       onOk: () => {
         ipcRenderer.send('tag-delete', tagValue)
-        ipcRenderer.once('tag-deleted', (event: Event, result: any) => {
+        ipcRenderer.once('tag-deleted', (event: IpcRendererEvent, result: any) => {
           this.$bus.$emit('site-reload')
           this.$message.success('标签已删除')
           this.visible = false

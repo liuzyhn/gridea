@@ -7,8 +7,19 @@
         style="width: 200px"
         @search="onSearch"
         v-model="keyword"
+        @blur="handleSearchInputBlur"
+        v-if="searchInputVisible"
       />
-      <a-button class="btn" type="primary" @click="newArticle">{{ $t('newArticle') }}</a-button>
+      <a-tooltip placement="bottom" :title="$t('searchArticle')">
+        <div class="op-btn" @click="searchInputVisible = true" v-if="!keyword && !searchInputVisible">
+          <i class="zwicon-search"></i>
+        </div>
+      </a-tooltip>
+      <a-tooltip placement="bottom" :title="$t('newArticle')">
+        <div class="op-btn" tabindex="0" @click="newArticle">
+          <i class="zwicon-plus"></i>
+        </div>
+      </a-tooltip>
     </a-row>
     <div class="content-container">
       <a-table
@@ -19,7 +30,6 @@
         :pagination="{ size: 'small' }"
       >
         <span slot="customTitle">
-          <!-- <a-button class="btn" type="danger" >{{  }}</a-button> -->
           <template v-if="selectedRowKeys.length > 0">
             {{ $t('deleteSelected') }} {{ selectedRowKeys.length }}
             <i class="zwicon-trash delete-btn" @click="deleteSelectedPosts"></i>
@@ -33,7 +43,12 @@
           slot-scope="text, record"
           @click="editPost(record)"
         ><i class="zwicon-document post-icon"></i> {{ text }} <a-tag v-if="record.data.hideInList" color="orange">Hide</a-tag> </a>
-        <a-tag :class="{'tag-success': text, 'tag-draft': !text }" slot="status" :color="text ? '#d8f5ea': '#e8e8e8'" slot-scope="text">{{ text ? $t('published') : $t('draft') }}</a-tag>
+        <a-tag
+          :class="{'tag-success': text, 'tag-draft': !text }"
+          slot="status"
+          :color="text ? '#d8f5ea': '#e8e8e8'"
+          slot-scope="text"
+        >{{ text ? $t('published') : $t('draft') }}</a-tag>
         <span slot="date" slot-scope="text" class="post-date">{{ text }}</span>
       </a-table>
     </div>
@@ -51,12 +66,13 @@
 </template>
 
 <script lang="ts">
-import { ipcRenderer } from 'electron'
+import { ipcRenderer, IpcRendererEvent } from 'electron'
 import { Vue, Component, Watch } from 'vue-property-decorator'
 import { State } from 'vuex-class'
 import { FadeTransition } from 'vue2-transitions'
 import { IPost } from '../../interfaces/post'
 import ArticleUpdate from './ArticleUpdate.vue'
+import ga from '../../helpers/analytics'
 
 @Component({
   components: {
@@ -77,11 +93,17 @@ export default class Articles extends Vue {
 
   keyword = ''
 
+  searchInputVisible = false
+
+  handleSearchInputBlur() {
+    if (!this.keyword) {
+      this.searchInputVisible = false
+    }
+  }
+
   get columns() {
     return [
       {
-        // title: this.$t('title'),
-        key: 'data.title',
         dataIndex: 'data.title',
         slots: { title: 'customTitle' },
         scopedSlots: { customRender: 'name' },
@@ -131,6 +153,8 @@ export default class Articles extends Vue {
   newArticle() {
     this.articleUpdateVisible = true
     this.currentArticleFileName = ''
+
+    ga.event('Post', 'Post - new', { evLabel: this.site.setting.domain })
   }
 
   editPost(post: IPost) {
@@ -147,7 +171,7 @@ export default class Articles extends Vue {
       cancelText: 'No',
       onOk: () => {
         ipcRenderer.send('app-post-delete', post)
-        ipcRenderer.once('app-post-deleted', (event: Event, data: any) => {
+        ipcRenderer.once('app-post-deleted', (event: IpcRendererEvent, data: any) => {
           if (data) {
             this.$message.success(this.$t('articleDelete'))
             this.$bus.$emit('site-reload')
@@ -166,11 +190,14 @@ export default class Articles extends Vue {
       cancelText: 'No',
       onOk: () => {
         ipcRenderer.send('app-post-list-delete', this.selectedPost)
-        ipcRenderer.once('app-post-list-deleted', (event: Event, data: any) => {
+        ipcRenderer.once('app-post-list-deleted', (event: IpcRendererEvent, data: any) => {
           console.log(data)
           if (data) {
             this.$bus.$emit('snackbar-display', this.$t('articleDelete'))
             this.$bus.$emit('site-reload')
+
+            ga.event('Post', 'Post - delete', { evLabel: this.site.setting.domain, evValue: this.selectedPost.length })
+
             this.selectedPost = []
             this.selectedRowKeys = []
           }

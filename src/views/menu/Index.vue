@@ -1,7 +1,11 @@
 <template>
   <div class="">
     <a-row type="flex" justify="end" class="tool-container">
-      <a-button class="btn" type="primary" @click="newMenu">{{ $t('newMenu') }}</a-button>
+      <a-tooltip placement="bottom" :title="$t('newMenu')">
+        <div class="op-btn" tabindex="0" @click="newMenu">
+          <i class="zwicon-plus"></i>
+        </div>
+      </a-tooltip>
     </a-row>
     <div class="content-container">
       <a-table
@@ -70,12 +74,13 @@
 </template>
 
 <script lang="ts">
-import { ipcRenderer, Event } from 'electron'
+import { ipcRenderer, IpcRendererEvent } from 'electron'
 import { Vue, Component } from 'vue-property-decorator'
 import { State } from 'vuex-class'
 import { MenuTypes } from '../../helpers/enums'
 import { IMenu } from '../../interfaces/menu'
 import { IPost } from '../../interfaces/post'
+import ga from '../../helpers/analytics'
 
 interface IForm {
   name: any
@@ -157,6 +162,8 @@ export default class Menu extends Vue {
     this.form.openType = MenuTypes.Internal
     this.form.link = ''
     this.visible = true
+
+    ga.event('Menu', 'Menu - new', { evLabel: this.site.setting.domain })
   }
 
   close() {
@@ -174,10 +181,12 @@ export default class Menu extends Vue {
   saveMenu() {
     console.log('click save menu', this.form)
     ipcRenderer.send('menu-save', { ...this.form })
-    ipcRenderer.once('menu-saved', (event: Event, result: any) => {
+    ipcRenderer.once('menu-saved', (event: IpcRendererEvent, result: any) => {
       this.$bus.$emit('site-reload')
       this.$message.success(this.$t('menuSuccess'))
       this.visible = false
+
+      ga.event('Menu', 'Menu - save', { evLabel: this.form.name })
     })
   }
 
@@ -190,7 +199,7 @@ export default class Menu extends Vue {
       cancelText: 'No',
       onOk: () => {
         ipcRenderer.send('menu-delete', menuValue)
-        ipcRenderer.once('menu-deleted', (event: Event, result: any) => {
+        ipcRenderer.once('menu-deleted', (event: IpcRendererEvent, result: any) => {
           this.$bus.$emit('site-reload')
           this.$message.success(this.$t('menuDelete'))
           this.visible = false

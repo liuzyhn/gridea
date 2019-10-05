@@ -7,7 +7,7 @@ import { ISetting, ICommentSetting } from '../../interfaces/setting'
 import { DEFAULT_POST_PAGE_SIZE, DEFAULT_ARCHIVES_PAGE_SIZE, DEFAULT_FEED_COUNT } from '../../helpers/constants'
 
 export interface Site {
-  appDir: string,
+  appDir: string
   config: any
   posts: IPost[]
   tags: ITag[]

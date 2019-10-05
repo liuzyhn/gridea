@@ -1,18 +1,25 @@
 import express from 'express'
 
 export default function initServer() {
-  const server = express()
+  const app = express()
+  let server: any = null
+
   function listen(port: number) {
-    server.listen(port, 'localhost').on('error', (err: NodeJS.ErrnoException) => {
+    server = app.listen(port, 'localhost').on('error', (err: NodeJS.ErrnoException) => {
       if (err) {
-        console.log(`Express port ${port} is busy, trying with port ${port + 1}`)
+        console.log(`Preview server port ${port} is busy, trying with port ${port + 1}`)
         listen(port + 1)
       }
     }).on('listening', () => {
-      server.set('port', port)
-      console.log(`Express server is running on port : ${port}`)
+      app.set('port', port)
+      console.log(`Preview server is running on port : ${port}`)
     })
   }
+
   listen(4000)
-  return server
+
+  return {
+    server,
+    app,
+  }
 }
